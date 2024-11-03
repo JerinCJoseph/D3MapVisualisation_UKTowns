@@ -33,11 +33,15 @@ d3.select("#updateButton").on("click", function(){
 function loadTowns(count) {
     d3.json(`${townUrl}${count}`).then((townsData) => {
         var circles = svg.selectAll("circle")
-            .data(townsData, d => d.Town);
+            .data(townsData, function(d){
+                return d.Town;
+            });  
         
         circles.exit().remove();
         //svg.selectAll("circle").remove();
         svg.selectAll("text").remove();
+
+        const Tooltip = d3.select(".tdataTooltip").style("display", "none");
 
         circles.enter()
             .append("circle")
@@ -54,8 +58,8 @@ function loadTowns(count) {
             .attr("cy", d => projection([d.lng, d.lat])[1])
             .attr("r", d => Math.sqrt(d.Population * 0.0004));
 
-        //checking 
-        svg.selectAll("text")
+        //checking commented coz it looks cluttered
+        /*svg.selectAll("text")
             .data(townsData)
             .enter()
             .append("text")
@@ -64,7 +68,47 @@ function loadTowns(count) {
             .text(d => d.Town)
             .attr("font-size", "12px")
             .attr("fill", "grey")  //black
-            .attr("text-anchor", "middle");
+            .attr("text-anchor", "middle");*/
+
+        //tooltip
+        svg.selectAll("circle")
+        .on("mouseover", function(event, d) {
+            console.log(d);
+            d3.select(this)
+                .attr('fill','#120078');
+
+            Tooltip.style('display','block')
+                   .style('top', (event.pageY - 55) +'px')  
+                   .style('left', (event.pageX + 20) + 'px'); 
+    
+            Tooltip.select('#tdataCounty span').text(d.County);
+            Tooltip.select('#tdataTown span').text(d.Town);
+            Tooltip.select('#tdataPopulation span').text(d.Population);      
+        })
+        .on("mousemove", function(event) {
+            Tooltip.style('top', (event.pageY - 55) + 'px')
+                   .style('left', (event.pageX + 20) + 'px');
+        })
+        .on("mouseout",function(event) {
+            d3.select(this)
+              .attr('fill','red')
+              .attr('r',Math.sqrt(d.Population * 0.0004)); 
+
+            Tooltip.style('display','none');
+        }); 
+
+        svg.on("click", function(event) {
+            const isCircle = event.target.tagName === 'circle';
+            if (!isCircle) {
+                Tooltip.style('display', 'none');
+            }
+        });   
+        svg.on("mouseout", function(event) {
+            const isCircle = event.target.tagName === 'circle';
+            if (!isCircle) {
+                Tooltip.style('display', 'none');
+            }
+        });
     }).catch(error => console.error("Data fetch error:", error));
 }
 
