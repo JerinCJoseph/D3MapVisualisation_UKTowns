@@ -1,4 +1,4 @@
-const width = 900, height = 900;
+const width = 1000, height = 1000;
 const svg = d3.select("#map").attr("width", width).attr("height", height);
 
 const projection = d3.geoMercator()
@@ -57,6 +57,14 @@ const zoom = d3.zoom()
     .scaleExtent([1, 8])  
     .translateExtent([[0, 0], [width, height]]) //restricting translation to map area
     .on("zoom", (event) => {
+        const scale = event.transform.k;
+        const adjustedWidth = width / scale;
+        const adjustedHeight = height / scale;
+        console.log("adjustedWidth:"+adjustedWidth+" adjustedHeight:"+adjustedHeight);
+        zoom.translateExtent([
+            [-adjustedWidth, -adjustedHeight],
+            [width + adjustedWidth, height + adjustedHeight]
+        ]);
     const boundedTransform = handleBoundedTranslate(event.transform);
     projection.scale(2700 * boundedTransform.k) 
               .translate([width / 2 + boundedTransform.x, height / 2 + boundedTransform.y]);
