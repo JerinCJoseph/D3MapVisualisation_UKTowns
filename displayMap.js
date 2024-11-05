@@ -17,7 +17,7 @@ d3.json("ukmap.geojson").then((data) => {
         .attr("stroke", "#333");     
 });
 
-const townUrl = "http://34.147.162.172/Circles/Towns/"; //removing towns count for now...just base url
+const townUrl = "http://34.147.162.172/Circles/Towns/"; 
 var slider = document.getElementById("tNumber");
 var townCountDisplay = document.getElementById("tNumberValue");
 
@@ -30,6 +30,65 @@ d3.select("#updateButton").on("click", function(){
     loadTowns(slider.value);
 });
 
+function getMapBoundary(scale) {
+    const [[x0, y0], [x1, y1]] = path.bounds({ type: "Sphere" });
+    const mapWidth = (x1 - x0) * scale;
+    const mapHeight = (y1 - y0) * scale;
+
+    return {
+        minX: width / 2 - mapWidth / 2,
+        maxX: width / 2 + mapWidth / 2,
+        minY: height / 2 - mapHeight / 2,
+        maxY: height / 2 + mapHeight / 2
+    };
+}
+
+function handleBoundedTranslate(transform) {
+    const scale = transform.k;
+    const bounds = getMapBoundary(scale);
+    const x = Math.max(bounds.minX, Math.min(bounds.maxX, transform.x));
+    const y = Math.max(bounds.minY, Math.min(bounds.maxY, transform.y));
+
+    return { x, y, k: scale };
+}
+
+//zoom function
+const zoom = d3.zoom()
+    .scaleExtent([1, 8])  
+    .translateExtent([[0, 0], [width, height]]) //restricting translation to map area
+    .on("zoom", (event) => {
+    const boundedTransform = handleBoundedTranslate(event.transform);
+    projection.scale(2700 * boundedTransform.k) 
+              .translate([width / 2 + boundedTransform.x, height / 2 + boundedTransform.y]);
+
+    svg.selectAll("path").attr("d", path);  
+    svg.selectAll("circle")
+        .attr("cx", d => projection([d.lng, d.lat])[0])
+        .attr("cy", d => projection([d.lng, d.lat])[1]);  
+});
+svg.call(zoom);
+
+//zoom buttons functions
+d3.select("#zoomIn").on("click", function() {
+    svg.transition().call(zoom.scaleBy, 1.2);  
+});
+
+d3.select("#zoomOut").on("click", function() {
+    svg.transition().call(zoom.scaleBy, 0.8);  
+});
+
+d3.select("#reset").on("click", function() {
+    projection.scale(2700).translate([width / 2, height / 2]);
+    svg.selectAll("path").attr("d", path);
+    svg.selectAll("circle")
+        .attr("cx", d => projection([d.lng, d.lat])[0])
+        .attr("cy", d => projection([d.lng, d.lat])[1]);
+    svg.transition().duration(750).call(
+        zoom.transform,       
+        d3.zoomIdentity      
+    );
+});
+
 function loadTowns(count) {
     d3.json(`${townUrl}${count}`).then((townsData) => {
         var circles = svg.selectAll("circle")
@@ -38,8 +97,7 @@ function loadTowns(count) {
             });  
         
         circles.exit().remove();
-        //svg.selectAll("circle").remove();
-        svg.selectAll("text").remove();
+        //svg.selectAll("text").remove();
 
         const Tooltip = d3.select(".tdataTooltip").style("display", "none");
 
@@ -75,7 +133,7 @@ function loadTowns(count) {
         .on("mouseover", function(event, d) {
             console.log(d);
             d3.select(this)
-                .attr('fill','#120078');
+                .attr('fill','#8F00FF');
 
             Tooltip.style('display','block')
                    .style('top', (event.pageY - 55) +'px')  
@@ -89,7 +147,7 @@ function loadTowns(count) {
             Tooltip.style('top', (event.pageY - 55) + 'px')
                    .style('left', (event.pageX + 20) + 'px');
         })
-        .on("mouseout",function(event) {
+        .on("mouseout",function(event, d) {
             d3.select(this)
               .attr('fill','red')
               .attr('r',Math.sqrt(d.Population * 0.0004)); 
@@ -98,12 +156,6 @@ function loadTowns(count) {
         }); 
 
         svg.on("click", function(event) {
-            const isCircle = event.target.tagName === 'circle';
-            if (!isCircle) {
-                Tooltip.style('display', 'none');
-            }
-        });   
-        svg.on("mouseout", function(event) {
             const isCircle = event.target.tagName === 'circle';
             if (!isCircle) {
                 Tooltip.style('display', 'none');
