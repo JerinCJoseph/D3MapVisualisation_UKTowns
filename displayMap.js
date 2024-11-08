@@ -1,6 +1,8 @@
+//map dimensions
 const width = 1000, height = 1000;
 const svg = d3.select("#map").attr("width", width).attr("height", height);
 
+//Setting up map projection
 const projection = d3.geoMercator()
     .center([-3.4360,55.3781]) 
     .scale(2700)        
@@ -12,15 +14,17 @@ let countyPopulationData = {};
 let geoJsonData = null;
 let isChoroplethActive = false;
 
+//Loading UK map GeoJSON data
 d3.json("ukmap.geojson").then((data) => {
     geoJsonData = data;
     svg.selectAll("path")
         .data(data.features)
         .enter().append("path")
         .attr("d", path)
-        .attr("fill", "#b6d7a8") //#b8b78f #cce5df
+        .attr("fill", "#b6d7a8")
         .attr("stroke", "#333"); 
     
+    //Fetching population data for towns and aggregating by county    
     d3.json("http://34.147.162.172/Circles/Towns/500").then((townsData) => {
         townsData.forEach(town => {
             const county = town.County;
@@ -35,13 +39,14 @@ var townCountDisplay = document.getElementById("tNumberValue");
 
 
 d3.select("#tNumber").on("input",function(){
-    townCountDisplay.textContent = slider.value;  //for displayinf slider value
+    townCountDisplay.textContent = slider.value;  //for displaying slider value
 });
 
 d3.select("#updateButton").on("click", function(){
     loadTowns(slider.value);
 });
 
+//function to get the map boundaries for zooming with constraints
 function getMapBoundary(scale) {
     const [[x0, y0], [x1, y1]] = path.bounds({ type: "Sphere" });
     const mapWidth = (x1 - x0) * scale;
@@ -55,6 +60,7 @@ function getMapBoundary(scale) {
     };
 }
 
+//handling the map transform to stay within boundaries during zoom
 function handleBoundedTranslate(transform) {
     const scale = transform.k;
     const bounds = getMapBoundary(scale);
@@ -69,14 +75,6 @@ const zoom = d3.zoom()
     .scaleExtent([0.8, 3])  
     .translateExtent([[0, 0], [width, height]]) //restricting translation to map area
     .on("zoom", (event) => {
-        /*const scale = event.transform.k;
-        const adjustedWidth = width / scale;
-        const adjustedHeight = height / scale;
-        console.log("adjustedWidth:"+adjustedWidth+" adjustedHeight:"+adjustedHeight);
-        zoom.translateExtent([
-            [-adjustedWidth, -adjustedHeight],
-            [width + adjustedWidth, height + adjustedHeight]
-        ]);*/
     const boundedTransform = handleBoundedTranslate(event.transform);
     projection.scale(2700 * boundedTransform.k) 
               .translate([width / 2 + boundedTransform.x, height / 2 + boundedTransform.y]);
@@ -89,9 +87,9 @@ const zoom = d3.zoom()
     const zoomPercent = Math.round(boundedTransform.k * 100);
     d3.select("#zoomPercentage").text(`${zoomPercent}%`);
 });
-svg.call(zoom);
+svg.call(zoom).on("wheel.zoom",null);
 
-//zoom buttons functions
+//zoom control buttons functions
 d3.select("#zoomIn").on("click", function() {
     svg.transition().call(zoom.scaleBy, 1.2);  
 });
@@ -112,7 +110,7 @@ d3.select("#reset").on("click", function() {
     );
 });
 
-//filters for 3d effects
+//filters for 3d effects on map and town circles
 svg.append("defs").append("filter")
     .attr("id", "raisedEffect")
     .attr("x", "-60%")
@@ -146,6 +144,7 @@ svg.append("defs")
     .attr("stop-color", d => d.color)
     .attr("stop-opacity", d => d.opacity);
 
+//handling choropleth and town mode toggle functionality   
 const updateDiv = d3.select("#tUpdate");
 const choroButton = d3.select("#viewChoropleth");
 choroButton.text("View Choropleth");
@@ -179,6 +178,7 @@ choroButton.on("click", function() {
     }
 });
 
+//main function to load town data and create town markers
 function loadTowns(count) {
     d3.json(`${townUrl}${count}`).then((townsData) => {
         var circles = svg.selectAll("circle")
@@ -201,31 +201,19 @@ function loadTowns(count) {
             .merge(circles)
             .transition()
             .duration(1500)
-            .ease(d3.easeElastic)//easeSin
+            .ease(d3.easeElastic)
             .attr("cx", d => projection([d.lng, d.lat])[0])
             .attr("cy", d => projection([d.lng, d.lat])[1])
             .attr("r", d => Math.sqrt(d.Population * 0.0004));
 
-        //checking commented coz it looks cluttered
-        /*svg.selectAll("text")
-            .data(townsData)
-            .enter()
-            .append("text")
-            .attr("x", d => projection([d.lng, d.lat])[0])
-            .attr("y", d => projection([d.lng, d.lat])[1] + 15) //10
-            .text(d => d.Town)
-            .attr("font-size", "12px")
-            .attr("fill", "grey")  //black
-            .attr("text-anchor", "middle");*/
-
-        //tooltip
+        //tooltip for town markers
         svg.selectAll("circle")
         .on("mouseover", function(event, d) {
             console.log(d);
             d3.select(this)
                 .attr('fill','url(#sphereEffect)')
-                .attr('r',Math.sqrt(d.Population * 0.002));
-                //.style("filter", "url(#raisedEffect)");
+                .attr('r',Math.sqrt(d.Population * 0.002))
+                .style("filter", "url(#raisedEffect)");
 
             Tooltip.style('display','block')
                    .style('top', (event.pageY - 55) +'px')  
@@ -256,5 +244,6 @@ function loadTowns(count) {
     }).catch(error => console.error("Data fetch error:", error));
 }
 
+//calling loadTowns for initial load with 50towns
  const defTownNumber=50;
  loadTowns(defTownNumber);
