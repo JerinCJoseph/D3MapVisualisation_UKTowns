@@ -8,14 +8,26 @@ const projection = d3.geoMercator()
 
 const path = d3.geoPath().projection(projection);
 
+let countyPopulationData = {};
+let geoJsonData = null;
+let isChoroplethActive = false;
+
 d3.json("ukmap.geojson").then((data) => {
+    geoJsonData = data;
     svg.selectAll("path")
         .data(data.features)
         .enter().append("path")
         .attr("d", path)
         .attr("fill", "#b6d7a8") //#b8b78f #cce5df
-        .attr("stroke", "#333");     
-});
+        .attr("stroke", "#333"); 
+    
+    d3.json("http://34.147.162.172/Circles/Towns/500").then((townsData) => {
+        townsData.forEach(town => {
+            const county = town.County;
+            countyPopulationData[county] = (countyPopulationData[county] || 0) + town.Population;
+        });
+    }).catch(error => console.error("Population data fetch error:", error));
+}).catch(error => console.error("GeoJSON data fetch error:", error));
 
 const townUrl = "http://34.147.162.172/Circles/Towns/"; 
 var slider = document.getElementById("tNumber");
@@ -54,17 +66,17 @@ function handleBoundedTranslate(transform) {
 
 //zoom function
 const zoom = d3.zoom()
-    .scaleExtent([1, 8])  
+    .scaleExtent([0.8, 3])  
     .translateExtent([[0, 0], [width, height]]) //restricting translation to map area
     .on("zoom", (event) => {
-        const scale = event.transform.k;
+        /*const scale = event.transform.k;
         const adjustedWidth = width / scale;
         const adjustedHeight = height / scale;
         console.log("adjustedWidth:"+adjustedWidth+" adjustedHeight:"+adjustedHeight);
         zoom.translateExtent([
             [-adjustedWidth, -adjustedHeight],
             [width + adjustedWidth, height + adjustedHeight]
-        ]);
+        ]);*/
     const boundedTransform = handleBoundedTranslate(event.transform);
     projection.scale(2700 * boundedTransform.k) 
               .translate([width / 2 + boundedTransform.x, height / 2 + boundedTransform.y]);
@@ -72,7 +84,10 @@ const zoom = d3.zoom()
     svg.selectAll("path").attr("d", path);  
     svg.selectAll("circle")
         .attr("cx", d => projection([d.lng, d.lat])[0])
-        .attr("cy", d => projection([d.lng, d.lat])[1]);  
+        .attr("cy", d => projection([d.lng, d.lat])[1]);
+    
+    const zoomPercent = Math.round(boundedTransform.k * 100);
+    d3.select("#zoomPercentage").text(`${zoomPercent}%`);
 });
 svg.call(zoom);
 
@@ -97,6 +112,73 @@ d3.select("#reset").on("click", function() {
     );
 });
 
+//filters for 3d effects
+svg.append("defs").append("filter")
+    .attr("id", "raisedEffect")
+    .attr("x", "-60%")
+    .attr("y", "-60%")
+    .attr("width", "250%")
+    .attr("height", "250%")
+    .append("feDropShadow")
+    .attr("dx", 0)
+    .attr("dy", 7)
+    .attr("stdDeviation", 7)
+    .attr("flood-color", "black")
+    .attr("flood-opacity", 0.7);
+
+svg.append("defs")
+    .append("radialGradient")
+    .attr("id", "sphereEffect")
+    .attr("cx", "50%")
+    .attr("cy", "50%")
+    .attr("r", "50%")
+    .attr("fx", "30%")
+    .attr("fy", "30%")
+    .selectAll("stop")
+    .data([
+        { offset: "0%", color: "#FF668D", opacity: 0.7 },
+        { offset: "80%", color: "#FF0B48", opacity: 0.9 },
+        { offset: "100%", color: "#800020", opacity: 1 } 
+    ])
+    .enter()
+    .append("stop")
+    .attr("offset", d => d.offset)
+    .attr("stop-color", d => d.color)
+    .attr("stop-opacity", d => d.opacity);
+
+const updateDiv = d3.select("#tUpdate");
+const choroButton = d3.select("#viewChoropleth");
+choroButton.text("View Choropleth");
+
+const choroToggleText = d3.select("#choroControlsText");
+choroToggleText.text("Population by County(500 Towns) :");
+
+choroButton.on("click", function() {
+    let currentText = choroButton.text();
+    choroButton.text(currentText === "View Choropleth" ? "View Town Data" : "View Choropleth");
+
+    let currentViewText = choroToggleText.text();
+    choroToggleText.text(currentViewText === "Population by County(500 Towns) :" ? "Population by Town:" : "Population by County(500 Towns) :");
+
+    if (!isChoroplethActive) {
+        isChoroplethActive = true;
+
+        svg.selectAll("circle").remove();
+        updateDiv.style("visibility", "hidden");
+        d3.select(".choroTooltip").style("visibility", "visible");
+        applyChoroColouring();
+    } else {
+        isChoroplethActive = false;
+
+        svg.selectAll("path").attr("fill", "#b6d7a8"); 
+        d3.select(".choroLegend").style("visibility", "hidden"); 
+        d3.select(".choroTooltip").style("visibility", "hidden");
+        updateDiv.style("visibility", "visible");
+
+        loadTowns(defTownNumber);
+    }
+});
+
 function loadTowns(count) {
     d3.json(`${townUrl}${count}`).then((townsData) => {
         var circles = svg.selectAll("circle")
@@ -114,12 +196,12 @@ function loadTowns(count) {
             .attr("cx", d => projection([d.lng, d.lat])[0])
             .attr("cy", d => projection([d.lng, d.lat])[1])
             .attr("r", 0)
-            .attr("fill", "red")
-            .attr("stroke", "black")
+            .attr("fill", "url(#sphereEffect)")
+            .attr("stroke", "FF0B48")
             .merge(circles)
             .transition()
             .duration(1500)
-            .ease(d3.easeSin)
+            .ease(d3.easeElastic)//easeSin
             .attr("cx", d => projection([d.lng, d.lat])[0])
             .attr("cy", d => projection([d.lng, d.lat])[1])
             .attr("r", d => Math.sqrt(d.Population * 0.0004));
@@ -141,7 +223,9 @@ function loadTowns(count) {
         .on("mouseover", function(event, d) {
             console.log(d);
             d3.select(this)
-                .attr('fill','#8F00FF');
+                .attr('fill','url(#sphereEffect)')
+                .attr('r',Math.sqrt(d.Population * 0.002));
+                //.style("filter", "url(#raisedEffect)");
 
             Tooltip.style('display','block')
                    .style('top', (event.pageY - 55) +'px')  
@@ -157,9 +241,9 @@ function loadTowns(count) {
         })
         .on("mouseout",function(event, d) {
             d3.select(this)
-              .attr('fill','red')
-              .attr('r',Math.sqrt(d.Population * 0.0004)); 
-
+              .attr('fill','url(#sphereEffect)')
+              .attr('r',Math.sqrt(d.Population * 0.0004)) 
+              .style("filter", null);
             Tooltip.style('display','none');
         }); 
 
@@ -172,5 +256,5 @@ function loadTowns(count) {
     }).catch(error => console.error("Data fetch error:", error));
 }
 
-const defTownNumber=50;
-loadTowns(defTownNumber);
+ const defTownNumber=50;
+ loadTowns(defTownNumber);
