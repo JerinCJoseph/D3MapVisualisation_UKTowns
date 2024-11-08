@@ -1,14 +1,15 @@
+//Calculating the Levenshtein distance between two strings to measure their similarity
 function getStringDist(a, b) {
-    const matrix = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+    const matrix = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]); //Initialising 2D matrix with distances
     for (let j = 1; j <= b.length; j++) matrix[0][j] = j;
     
     for (let i = 1; i <= a.length; i++) {
         for (let j = 1; j <= b.length; j++) {
             const cost = a[i - 1] === b[j - 1] ? 0 : 1;
             matrix[i][j] = Math.min(
-                matrix[i - 1][j] + 1,      
-                matrix[i][j - 1] + 1,      
-                matrix[i - 1][j - 1] + cost 
+                matrix[i - 1][j] + 1,      //deletion
+                matrix[i][j - 1] + 1,      //insertion
+                matrix[i - 1][j - 1] + cost  //substitution
             );
         }
     }
@@ -19,6 +20,7 @@ function getClosestCountyName(countyName, countyData) {
     return d3.least(Object.keys(countyData), name => getStringDist(name.toLowerCase(), countyName.toLowerCase()));
 }
 
+//Applyinf choropleth colouring to map counties based on population data
 function applyChoroColouring() {
     if (!countyPopulationData || !geoJsonData) {
         console.log("data not fully loaded for choro");
@@ -45,7 +47,7 @@ function applyChoroColouring() {
         .on("mouseover", (event, d) => {
             const countyName = d.properties.NAME_2 || d.properties.NAME_3;
             let population = countyPopulationData[countyName] || countyPopulationData[getClosestCountyName(countyName, countyPopulationData)];
-            if (isChoroplethActive) { 
+            if (isChoroplethActive) { //Highlighting county on hover if choropleth is active
             d3.select(event.currentTarget).style("filter", "url(#raisedEffect)");
             }
             const choroTooltip = d3.select(".choroTooltip").style("display", "block")
@@ -61,6 +63,7 @@ function applyChoroColouring() {
             d3.select(".choroTooltip").style("display", "none");
         });
 
+    //setting the choropleth legend
     let legendGroup = d3.select(".choroLegend");
     if (legendGroup.empty()) {
         const legendGroup = svg.append("g")

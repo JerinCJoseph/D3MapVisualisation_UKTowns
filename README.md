@@ -29,7 +29,7 @@ This project presents an interactive map visualization of the UK built with D3.j
 6. **Customizable UI**:
    - Includes interactive buttons to update the map data, adjust the map's zoom level, and toggle views (town data or choropleth).
    
-## Enhancements and Visual Effects
+## Visual Effects
 
 - **Zoom Bounds**: Zoom and pan are restricted to keep the map centered within the view. Current zoom level can be seen just above the zoom control.
 - **Gradients and Shadows**: Created custom visual effects, including gradients for town circles to give it a spherical 3D effect and a shadow filter on the map for a raised 3D effect.
