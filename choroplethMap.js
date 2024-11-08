@@ -16,6 +16,7 @@ function getStringDist(a, b) {
     return matrix[a.length][b.length];
 }
 
+//Getting the county name closest to the given county name using the Levenshtein distance function
 function getClosestCountyName(countyName, countyData) {
     return d3.least(Object.keys(countyData), name => getStringDist(name.toLowerCase(), countyName.toLowerCase()));
 }
