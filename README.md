@@ -10,7 +10,7 @@ This project presents an interactive map visualization of the UK built with D3.j
    - The map is zoomable and pannable, with buttons to zoom in, zoom out, and reset the view.
 
 2. **Dynamic Town Data**:
-   - Town data is retrieved from an API endpoint (e.g., `http://34.147.162.172/Circles/Towns/`) with a maximum limit of 500 towns. 
+   - Town data is retrieved from an API endpoint (`http://34.147.162.172/Circles/Towns/`) with a maximum limit of 500 towns. 
    - A slider is provided for the users to select the number of towns (1–500) to be displayed and should click on the update button to load the number of towns on the map.
    - The town data, including coordinates and population, is dynamically loaded and visualized on the map.
 
