@@ -44,16 +44,16 @@ This project presents an interactive map visualization of the UK built with D3.j
 ## References
 
 1. **D3.js Library**  
-   D3.js - Data-Driven Documents. [https://d3js.org/](https://d3js.org/)
+   D3.js - Data-Driven Documents: [https://d3js.org/](https://d3js.org/)
 
 2. **SVG Documentation**  
-   Mozilla Developer Network - SVG (Scalable Vector Graphics). [https://developer.mozilla.org/en-US/docs/Web/SVG](https://developer.mozilla.org/en-US/docs/Web/SVG)
+   Mozilla Developer Network - SVG (Scalable Vector Graphics): [https://developer.mozilla.org/en-US/docs/Web/SVG](https://developer.mozilla.org/en-US/docs/Web/SVG)
 
 3. **D3 Background Maps**  
-   D3 Graph Gallery - Background Maps in D3. [https://d3-graph-gallery.com/backgroundmap.html](https://d3-graph-gallery.com/backgroundmap.html)
+   D3 Graph Gallery - Background Maps in D3: [https://d3-graph-gallery.com/backgroundmap.html](https://d3-graph-gallery.com/backgroundmap.html)
 
 4. **D3 Choropleth Maps**  
-   D3 Graph Gallery - Choropleth Maps in D3. [https://d3-graph-gallery.com/choropleth.html](https://d3-graph-gallery.com/choropleth.html)
+   D3 Graph Gallery - Choropleth Maps in D3: [https://d3-graph-gallery.com/choropleth.html](https://d3-graph-gallery.com/choropleth.html)
 
 5. **Levenshtein Distance Explanation**  
-   GeeksforGeeks - Introduction to Levenshtein Distance. [https://www.geeksforgeeks.org/introduction-to-levenshtein-distance/](https://www.geeksforgeeks.org/introduction-to-levenshtein-distance/)
+   GeeksforGeeks - Introduction to Levenshtein Distance: [https://www.geeksforgeeks.org/introduction-to-levenshtein-distance/](https://www.geeksforgeeks.org/introduction-to-levenshtein-distance/)
