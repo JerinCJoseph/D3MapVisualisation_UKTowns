@@ -14,29 +14,40 @@ let countyPopulationData = {};
 let geoJsonData = null;
 let isChoroplethActive = false;
 
-//Loading UK map GeoJSON data
-d3.json("ukmap.geojson").then((data) => {
-    geoJsonData = data;
-    svg.selectAll("path")
-        .data(data.features)
-        .enter().append("path")
-        .attr("d", path)
-        .attr("fill", "#b6d7a8")
-        .attr("stroke", "#333"); 
-    
+const townUrl = "http://34.147.162.172/Circles/Towns/";
+const defTownNumber=50;
+
+//to display map data when loaded initially.
+function initMap(){
+    //Loading UK map GeoJSON data
+    d3.json("ukmap.geojson").then((data) => {
+        geoJsonData = data;
+        svg.selectAll("path")
+            .data(data.features)
+            .enter().append("path")
+            .attr("d", path)
+            .attr("fill", "#b6d7a8")
+            .attr("stroke", "#333"); 
+        
+        loadCountyPopulationData().then(() => {
+            setTimeout(()=> loadTowns(defTownNumber),150); //calling loadTowns for initial load with 50towns
+        });
+
+    }).catch(error => console.error("GeoJSON data fetch error:", error));
+} 
+
+function loadCountyPopulationData(){
     //Fetching population data for towns and aggregating by county    
-    d3.json("http://34.147.162.172/Circles/Towns/500").then((townsData) => {
+    return d3.json(`${townUrl}500`).then((townsData) => {
         townsData.forEach(town => {
             const county = town.County;
             countyPopulationData[county] = (countyPopulationData[county] || 0) + town.Population;
         });
     }).catch(error => console.error("Population data fetch error:", error));
-}).catch(error => console.error("GeoJSON data fetch error:", error));
+}
 
-const townUrl = "http://34.147.162.172/Circles/Towns/"; 
 var slider = document.getElementById("tNumber");
 var townCountDisplay = document.getElementById("tNumberValue");
-
 
 d3.select("#tNumber").on("input",function(){
     townCountDisplay.textContent = slider.value;  //for displaying slider value
@@ -244,6 +255,4 @@ function loadTowns(count) {
     }).catch(error => console.error("Data fetch error:", error));
 }
 
-//calling loadTowns for initial load with 50towns
- const defTownNumber=50;
- loadTowns(defTownNumber);
+window.onload = initMap; //calling initMap function when page is loaded
