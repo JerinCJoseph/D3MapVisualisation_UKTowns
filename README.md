@@ -41,7 +41,7 @@ This project presents an interactive map visualization of the UK built with D3.j
 - **Bootstrap**: For layout and styling of the HTML components.
 - **GeoJSON Data**: Provides the UK map outline, loaded asynchronously for flexibility.
 
-### References
+## References
 
 1. **D3.js Library**  
    D3.js - Data-Driven Documents. [https://d3js.org/](https://d3js.org/)
